@@ -24,6 +24,17 @@ export async function searchByCapital(text, signal) {
   return readCountries(data)
 }
 
+export async function searchByCountry(text, signal) {
+  const name = text.normalize('NFD').replace(/\p{M}/gu, '')
+
+  const { data } = await countriesApi.get('/names.common', {
+    params: { q: name },
+    signal,
+  })
+
+  return readCountries(data)
+}
+
 export async function listByRegion(region, signal) {
   const { data } = await countriesApi.get(`/region/${encodeURIComponent(region)}`, {
     signal,
