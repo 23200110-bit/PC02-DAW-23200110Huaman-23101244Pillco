@@ -42,7 +42,7 @@
           v-for="(country, index) in countries"
           :key="countryCode(country) || `country-${index}`"
           :country="country"
-          :code="countryCode(country)"
+          :country-code="countryCode(country)"
           @open-detail="openDetail"
           @open-currency="openCurrency"
         />
