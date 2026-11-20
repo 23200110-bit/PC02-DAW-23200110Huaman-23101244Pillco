@@ -1,5 +1,8 @@
 import { countriesApi } from './api.js'
 
+// La API devuelve 25 países por defecto; 100 es el máximo del plan Free
+export const PAGE_SIZE = 100
+
 function readCountries(payload) {
   const countries = payload?.data?.objects
 
@@ -10,14 +13,21 @@ function readCountries(payload) {
   return countries
 }
 
-export async function listCountries(signal) {
-  const { data } = await countriesApi.get('', { signal })
-  return readCountries(data)
+// Listado general paginado: devuelve la página y si hay más países (data.meta.more)
+export async function listCountries(signal, offset = 0) {
+  const { data } = await countriesApi.get('', {
+    params: { limit: PAGE_SIZE, offset },
+    signal,
+  })
+
+  const countries = readCountries(data)
+  const more = data?.data?.meta?.more ?? countries.length === PAGE_SIZE
+  return { countries, more: Boolean(more) }
 }
 
 export async function searchByCapital(text, signal) {
   const { data } = await countriesApi.get('/capitals', {
-    params: { q: text },
+    params: { q: text, limit: PAGE_SIZE },
     signal,
   })
 
@@ -26,6 +36,7 @@ export async function searchByCapital(text, signal) {
 
 export async function listByRegion(region, signal) {
   const { data } = await countriesApi.get(`/region/${encodeURIComponent(region)}`, {
+    params: { limit: PAGE_SIZE },
     signal,
   })
 

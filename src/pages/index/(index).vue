@@ -48,6 +48,19 @@
         />
       </div>
 
+      <!-- Paginación: la API entrega máximo 100 países por petición -->
+      <div v-if="hasMore && !loading && !errorMessage" class="flex flex-center q-mt-lg">
+        <q-btn
+          outline
+          no-caps
+          color="primary"
+          icon="expand_more"
+          label="Cargar más países"
+          :loading="loadingMore"
+          @click="loadMore"
+        />
+      </div>
+
       <!-- Modal de moneda (tasa frente a USD + conversor) -->
       <CurrencyDialog v-model="currencyOpen" :currency="selectedCurrency" />
     </section>
@@ -78,6 +91,8 @@ const loading = ref(false)
 const errorMessage = ref('')
 const currencyOpen = ref(false)
 const selectedCurrency = ref(null)
+const hasMore = ref(false)
+const loadingMore = ref(false)
 
 let activeRequest
 
@@ -120,6 +135,7 @@ async function loadCountries() {
 
   loading.value = true
   errorMessage.value = ''
+  hasMore.value = false
 
   try {
     let result
@@ -133,7 +149,9 @@ async function loadCountries() {
     } else if (selectedRegion) {
       result = await listByRegion(selectedRegion, request.signal)
     } else {
-      result = await listCountries(request.signal)
+      const page = await listCountries(request.signal)
+      result = page.countries
+      hasMore.value = page.more
     }
 
     if (!request.signal.aborted) {
@@ -155,6 +173,25 @@ async function loadCountries() {
       activeRequest = undefined
       loading.value = false
     }
+  }
+}
+
+// Trae la siguiente página del listado general (offset = países ya cargados)
+async function loadMore() {
+  loadingMore.value = true
+
+  try {
+    const page = await listCountries(undefined, countries.value.length)
+
+    // Si mientras tanto el usuario buscó o filtró, no se mezclan resultados
+    if (!capital.value.trim() && !region.value) {
+      countries.value = [...countries.value, ...page.countries]
+      hasMore.value = page.more
+    }
+  } catch (error) {
+    errorMessage.value = apiErrorMessage(error, 'No se pudieron cargar más países.')
+  } finally {
+    loadingMore.value = false
   }
 }
 
