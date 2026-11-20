@@ -30,7 +30,12 @@
     <!-- Datos generales -->
     <div class="row q-col-gutter-md q-mb-lg">
       <div v-for="item in items" :key="item.label" class="col-12 col-sm-6 col-md-4">
-        <InfoTile :label="item.label" :value="item.value" />
+        <InfoTile
+          :label="item.label"
+          :value="item.value"
+          :clickable="!!item.currency"
+          @click="openCurrency(item.currency)"
+        />
       </div>
     </div>
 
@@ -53,13 +58,18 @@
       </q-chip>
     </div>
     <div v-else class="text-grey-7">No tiene países fronterizos</div>
+
+    <!-- Modal de moneda (tasa frente a USD + conversor) -->
+    <CurrencyDialog v-model="currencyOpen" :currency="selectedCurrency" />
   </q-card>
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import InfoTile from '@/components/countries/InfoTile.vue'
+import CurrencyDialog from '@/components/currency/CurrencyDialog.vue'
+import { currencyName } from '@/utils/currency'
 import {
   flagUrl,
   countryName,
@@ -95,16 +105,24 @@ const props = defineProps({
 
 const router = useRouter()
 
+const currencyOpen = ref(false)
+const selectedCurrency = ref(null)
+
+function openCurrency(currency) {
+  if (!currency) return
+  selectedCurrency.value = currency
+  currencyOpen.value = true
+}
+
 const items = computed(() => {
   const c = props.country
-  const currency = currencyList(c)
-    .map((cur) => `${cur.name} (${cur.code})`)
-    .join(', ')
+  const currencies = currencyList(c)
+  const currency = currencies.map((cur) => `${currencyName(cur)} (${cur.code})`).join(', ')
 
   return [
     { label: 'Población', value: formatPopulation(c.population) },
     { label: 'Área', value: formatArea(c) },
-    { label: 'Moneda', value: currency || '—' },
+    { label: 'Moneda', value: currency || '—', currency: currencies[0] },
     { label: 'Idiomas', value: languageNames(c) },
     { label: 'Zona horaria', value: formatTimezones(c) },
     { label: 'Código telefónico', value: callingCodes(c) },
