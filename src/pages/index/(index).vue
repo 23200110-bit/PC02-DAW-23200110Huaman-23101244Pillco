@@ -4,13 +4,14 @@
       <header class="explorer-heading">
         <h1 id="explorer-title">Explorador de países</h1>
         <p>
-          Busca por capital, filtra por continente, toca una tarjeta para ver el detalle o toca la
-          moneda para ver su tasa.
+          Busca por capital o país, filtra por continente, toca una tarjeta para ver el detalle o
+          toca la moneda para ver su tasa.
         </p>
       </header>
 
       <CountryFilters
-        v-model:capital="capital"
+        v-model:query="query"
+        v-model:search-mode="searchMode"
         v-model:region="region"
         :region-options="regionOptions"
       />
@@ -48,7 +49,6 @@
         />
       </div>
 
-      <!-- Modal de moneda (tasa frente a USD + conversor) -->
       <CurrencyDialog v-model="currencyOpen" :currency="selectedCurrency" />
     </section>
   </q-page>
@@ -61,7 +61,12 @@ import CountryCard from '../../components/countries/CountryCard.vue'
 import CountryFilters from '../../components/countries/CountryFilters.vue'
 import CurrencyDialog from '../../components/currency/CurrencyDialog.vue'
 import { apiErrorMessage } from '../../services/api.js'
-import { listByRegion, listCountries, searchByCapital } from '../../services/countries.js'
+import {
+  listByRegion,
+  listCountries,
+  searchByCapital,
+  searchByCountry,
+} from '../../services/countries.js'
 import { CONTINENT_OPTIONS } from '../../utils/country.js'
 
 const router = useRouter()
@@ -71,7 +76,8 @@ const regionOptions = CONTINENT_OPTIONS.map((option) => ({
   value: option.value ?? '',
 }))
 
-const capital = ref('')
+const query = ref('')
+const searchMode = ref('capital')
 const region = ref('')
 const countries = ref([])
 const loading = ref(false)
@@ -115,8 +121,9 @@ async function loadCountries() {
   const request = new AbortController()
   activeRequest = request
 
-  const text = capital.value.trim()
+  const text = query.value.trim()
   const selectedRegion = region.value
+  const search = searchMode.value === 'country' ? searchByCountry : searchByCapital
 
   loading.value = true
   errorMessage.value = ''
@@ -125,7 +132,7 @@ async function loadCountries() {
     let result
 
     if (text) {
-      result = await searchByCapital(text, request.signal)
+      result = await search(text, request.signal)
 
       if (selectedRegion) {
         result = result.filter((country) => matchesRegion(country, selectedRegion))
@@ -167,7 +174,7 @@ function openCurrency(currency) {
   currencyOpen.value = true
 }
 
-watch([capital, region], loadCountries, { immediate: true })
+watch([query, searchMode, region], loadCountries, { immediate: true })
 onBeforeUnmount(() => activeRequest?.abort())
 </script>
 
