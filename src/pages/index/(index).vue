@@ -48,20 +48,8 @@
         />
       </div>
 
-      <q-dialog v-model="currencyOpen">
-        <q-card v-if="selectedCurrency" class="currency-preview">
-          <q-card-section>
-            <div class="text-h6">
-              {{ selectedCurrency.name || selectedCurrency.code }}
-            </div>
-            <div class="text-grey-7">{{ selectedCurrency.code }} {{ selectedCurrency.symbol }}</div>
-          </q-card-section>
-
-          <q-card-actions align="right">
-            <q-btn v-close-popup flat color="primary" label="Cerrar" />
-          </q-card-actions>
-        </q-card>
-      </q-dialog>
+      <!-- Modal de moneda (tasa frente a USD + conversor) -->
+      <CurrencyDialog v-model="currencyOpen" :currency="selectedCurrency" />
     </section>
   </q-page>
 </template>
@@ -71,6 +59,7 @@ import { onBeforeUnmount, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import CountryCard from '../../components/countries/CountryCard.vue'
 import CountryFilters from '../../components/countries/CountryFilters.vue'
+import CurrencyDialog from '../../components/currency/CurrencyDialog.vue'
 import { apiErrorMessage } from '../../services/api.js'
 import { listByRegion, listCountries, searchByCapital } from '../../services/countries.js'
 import { CONTINENT_OPTIONS } from '../../utils/country.js'
@@ -224,12 +213,6 @@ onBeforeUnmount(() => activeRequest?.abort())
   gap: 8px;
   margin-top: 24px;
   color: #526175;
-}
-
-.currency-preview {
-  width: 360px;
-  max-width: 90vw;
-  border-radius: 12px;
 }
 
 @media (min-width: 600px) {
